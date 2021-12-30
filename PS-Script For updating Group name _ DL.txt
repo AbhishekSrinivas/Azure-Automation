@@ -1,0 +1,48 @@
+O365 Group Name :- Test O365Group
+Current Email addres :- test.o365@abcd.onmicrosoft.com
+Update to :- test.o365@abcd.com
+
+If you want to update the Email Address of the Office 365 group, please follow below steps:
+
+Follow below script in powershell using Global Administrator Credentials:
+
+Set-ExecutionPolicy Unrestricted
+
+Start-service winrm
+
+Install-module MSOnline
+
+Import-module MSOnline
+
+$LiveCred = Get-Credential
+
+$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://ps.outlook.com/powershell/ -Credential $LiveCred -Authentication Basic -AllowRedirection
+
+Import-PSSession $SessionImport-PSSession $Session
+
+Connect-MsolService -Credential $LiveCred
+
+Run the below command to add required SMTP address as an alias:
+Set-UnifiedGroup -Identity "Test O365Group" -EmailAddresses: @{Add ="test.o365@abcd.com"}
+
+Promote alias as a primary SMTP address:
+Set-UnifiedGroup -Identity "Test O365Group" -PrimarySmtpAddress "test.o365@abcd.com"
+
+And if you want to update the Email Address of the Distribution List, please follow below steps:
+
+Run the below command to add required SMTP address as an alias:
+Set-DistributionGroup -Identity "Test O365Group" -EmailAddresses: @{Add ="test.o365@abcd.com"}
+
+Promote alias as a primary SMTP address:
+Set-DistributionGroup -Identity "Test O365Group" -PrimarySmtpAddress "test.o365@abcd.com"
+
+
+
+
+
+
+
+
+
+
+

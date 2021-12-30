@@ -1,0 +1,10 @@
+$subscriptionID = "33d4359c-2f6a-4106-8622-47a9e2b0c1a8"
+$rgname = "ilanadprodsv01-Migrated"
+$vmname = "ilanadprodsv01"
+$vhduri = 'https://ilantusprodussovhds.blob.core.windows.net/fixed/ilanadprodsv01-ilanadprodsv01-2013-12-30.vhd'
+Add-AzureRmAccount
+Select-AzureRmSubscription -SubscriptionID $subscriptionID
+Set-AzureRmContext -SubscriptionID $subscriptionID
+$vm = Get-AzVM -ResourceGroupName $rgname -Name $vmname
+$vm.StorageProfile.OsDisk.Vhd.Uri = $vhduri
+Update-AzVM -ResourceGroupName $rgname -VM $vm

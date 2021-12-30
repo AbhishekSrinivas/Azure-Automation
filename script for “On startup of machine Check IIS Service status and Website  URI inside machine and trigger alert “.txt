@@ -1,0 +1,99 @@
+<#
+
+Features of the script:
+1) Script will run for 10 min as soon as machine starts with interval of 60 seconds
+2) Check IISAdmin service status as soon as the machine boots up for every 1 min until 10 min--> Collect the all the status when the loop was running every min and send email.  In any minute if the service was found stop in the collected information those will be marked as red in font and success would be green.
+3) Hit website URL as soon as the machine boots up for every 1 min until 10 min--> Collect the all the status when the loop was running every min and send email.  In any minute if the website URL  was not accessible in the collected information those will be marked as red in font and success would be green.
+#>
+$result=@()
+
+#setup loop
+$TimeStart = Get-Date
+$TimeEnd = $timeStart.addminutes(10)
+Write-Host "Start Time: $TimeStart"
+write-host "End Time:   $TimeEnd"
+
+
+Do 
+{ 
+$TimeNow = Get-Date
+if ($TimeNow -ge $TimeEnd) 
+ {
+Write-host "It's time to finish."
+} 
+
+
+else 
+ {
+try
+    {
+
+        $iis=get-wmiobject Win32_Service -ComputerName BeehiveHRMSWEB1 -Filter "name='IISADMIN'"
+        if($iis.State -eq "Running")
+        {
+            Write-Host "$TimeNow IIS is running on BeehiveHRMSWEB1"
+            $info="<font color='green'> $TimeNow IIS is running on BeehiveHRMSWEB1 </font> <br> </br>"
+            $result+=$info
+        }
+
+    else
+        {
+            Write-Host "$TimeNow IIS is not running on BeehiveHRMSWEB1"
+            $info="<font color='red'> $TimeNow IIS is not running on BeehiveHRMSWEB1 </font> <br> </br>"
+            $result+=$info
+        }
+    
+    
+        $webrespond=Invoke-WebRequest "http://blobhrms.beehiveonweb.com/"
+
+        if($webrespond.statuscode -eq "200")
+        {
+            Write-Host "$TimeNow Website is responding and status code received is 200"
+            $info="<font color='green'> $TimeNow Website is responding and status code received is 200 </font> <br> </br>"
+            $result+=$info
+        }
+
+     else
+        {
+            Write-Host "$TimeNow Website is not responding with status code of 200"
+            $info="<font color='red'> $TimeNow Website is not responding with status code of 200 </font> <br> </br>"
+            $result+=$info
+        }
+   
+    }
+
+    catch
+    {
+            $err = $_.Exception
+            write-output $err.Message
+    }
+  
+ }
+Start-Sleep -Seconds 60
+}
+Until ($TimeNow -ge $TimeEnd)
+$result
+
+
+$From = "proloy.saha@g7cr.in"
+$EmailTo = "proloy.saha@g7cr.in"
+$Subject = "Website and IIS service Status: $((Get-Date).ToString())"
+$body = "Hello,<br> </br>"
+$body +="Website and IIS service Status for BeehiveHRMSWEB1 .<br> </br>"
+$body += $result
+$body += "<br> </br> G7CR Support <br> </br>"
+
+
+$SMTPServer = "outlook.office365.com"
+$SMTPPort = "587"
+
+
+$Username = "proloy.saha@g7cr.in"
+$Password ="******"
+
+$securePassword = ConvertTo-SecureString $Password -AsPlainText -Force
+$cred = New-Object PSCredential ($Username,$securePassword)
+
+write-output "Sending Mail Now"
+Send-MailMessage -From $From -to $EmailTo -Subject $Subject  -Body $body -SmtpServer $SMTPServer -port $SMTPPort -UseSsl -Credential $cred -BodyAsHtml        
+ 

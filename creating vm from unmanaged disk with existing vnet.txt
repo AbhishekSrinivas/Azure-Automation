@@ -1,0 +1,51 @@
+﻿AzureRmAccount
+
+Select-AzureRmSubscription -SubscriptionName "Summit_SouthEastAsia_CSP"
+
+
+$ResourceGroupName = "PSAPACRG01"
+$vmName = "SummitSEAQA01"
+$vmSize = "Standard_A3"
+$location = "Southeast Asia"
+$osDiskName = $vmName + "osDisk"
+
+#Specify OSDISK (VHD) to creat your VM
+$osDiskUri = "https://summitseaqa01sa.blob.core.windows.net/vhd/SummitSEAQA01.vhd"
+$nicname = $vmName + "NIC"
+
+$Shared_NW_RGName = "PSAPACRG01"
+$subnetName = "StaticSubnet"
+$vnetName = "PSAPACVNET01"
+
+$NSGRGName = "PSAPACRG01"
+$NSGName = "psapacnsg01"
+
+$vnet = Get-AzureRmVirtualNetwork -Name $vnetName -ResourceGroupName $Shared_NW_RGName
+$singlesubnet = Get-AzureRmVirtualNetworkSubnetConfig -Name $subnetName -VirtualNetwork $vnet 
+$nsg = Get-AzureRmNetworkSecurityGroup -Name $NSGName -ResourceGroupName $NSGRGName
+
+#Create Public IP and Network Card to Access your VM
+
+#To Create Public IP
+#$pip = New-AzureRmPublicIpAddress -Name $publicIPName -ResourceGroupName $ResourceGroupName -Location $location `
+#-AllocationMethod Dynamic -DomainNameLabel $DNSName
+
+#To Create NIC Card 
+$nic = New-AzureRmNetworkInterface -Name $nicname -ResourceGroupName $ResourceGroupName -Location $location `
+-SubnetId $singlesubnet.Id -NetworkSecurityGroupId $nsg.id
+ 
+
+## Set Hardware/Software and Network config to your VM
+
+$vm = New-AzureRmVMConfig -VMName $vmName -VMSize $vmSize
+
+$vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+
+#Setup your VM with above config / profile
+
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $osDiskName -VhdUri $osDiskUri -CreateOption attach -Linux -Caching ReadWrite
+
+$vm
+
+## Create the VM in Azure
+New-AzureRmVM -ResourceGroupName $ResourceGroupName -Location $location -VM $vm

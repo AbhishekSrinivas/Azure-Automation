@@ -1,0 +1,40 @@
+
+$LiveCred = Get-Credential
+$Session = New-PSSession -ConfigurationName Microsoft.Exchange -ConnectionUri https://outlook.office365.com/powershell-liveid/ -Credential $LiveCred -Authentication Basic -AllowRedirection
+Import-PSSession $Session 
+
+
+
+#Get all the mailboxes 
+
+
+$mailboxes = get-mailbox -resultsize unlimited
+$mailboxes |fl
+
+#Removing aliais for the entire mailboxes
+
+
+Foreach ($mbx in $csv) 
+{
+
+$name = $mbx.email
+$suffix = '@coreeltech.onmicrosoft.com'
+$address = $name + $suffix
+Set-mailbox $name -emailaddresses @{remove=$address}
+
+}
+
+
+#Adding aliais
+
+$csv = Import-Csv -Path "C:\users\shankar\desktop\nttf\Temp aliases.csv"
+
+Foreach ($mbx in $csv) 
+{
+
+$name = $mbx.Email
+$address = $mbx.Aliasidneeded
+Set-mailbox $name -emailaddresses @{Add=$address}
+
+} 
+

@@ -1,0 +1,12 @@
+
+mum
+
+Perf | where CounterName == "% Committed Bytes In Use" | summarize Avg_MemoryUsed = avg(CounterValue), Min_MemoryUsed = min(CounterValue), Max_MemoryUsed= max(CounterValue) by Computer, bin(TimeGenerated, 10min)
+| where Computer == "DATAHUB01-VM"
+
+AM
+
+Perf | where CounterName == "Available MBytes" | summarize Avg_MemoryAvailable = avg(CounterValue), Min_MemoryAvailable = min(CounterValue), Max_MemoryAvailable = max(CounterValue) by Computer, bin(TimeGenerated, 10min)
+| where Computer == "DATAHUB01-VM"
+
+P@ssw0rd@123
