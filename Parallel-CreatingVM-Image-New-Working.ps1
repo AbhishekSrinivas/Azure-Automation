@@ -1,4 +1,4 @@
-workflow Parallel-CreatingVM-SnapShot
+workflow Parallel-New-Gulab
 {
 
 Param 
@@ -19,7 +19,7 @@ Param
         [String] $SharedResourcesRGName,
 
         [Parameter(Mandatory=$true)]
-        [String] $SnapShotName,
+        [String] $SourceImageName,
 
         [Parameter(Mandatory=$true)]
         [String] $NSGName,
@@ -31,10 +31,13 @@ Param
         [String] $SubnetName,
 
         [Parameter(Mandatory=$true)]
-        [String] $VNet_AddPrefix,
+        [String] $AddPrefix,
 
         [Parameter(Mandatory=$true)]
-        [String] $Subnet_AddPrefix,
+        [String] $AdminUserName,
+
+        [Parameter(Mandatory=$true)]
+        [String] $AdminPassword,
 
         [Parameter(Mandatory=$true)]
         [String] $NoofVMs,
@@ -112,11 +115,17 @@ $nsg = New-AzureRmNetworkSecurityGroup -ResourceGroupName $Using:SharedResources
 
 "Creating New Shared Virtual Network and Subnet Config"
 
-        $subnet = New-AzureRmVirtualNetworkSubnetConfig -Name $Using:SubnetName -AddressPrefix $Using:Subnet_AddPrefix
+        $subnet = New-AzureRmVirtualNetworkSubnetConfig -Name $Using:SubnetName -AddressPrefix $Using:AddPrefix
 
         $vnet = New-AzureRmVirtualNetwork -Name $Using:VNetName -ResourceGroupName $Using:SharedResourcesRGName `
-        -Location $Using:VMLocation -AddressPrefix $Using:VNet_AddPrefix -Subnet $subnet
-           
+        -Location $Using:VMLocation -AddressPrefix $Using:AddPrefix -Subnet $subnet
+
+"Associating Virtual Network with Subnet"
+
+        Set-AzureRmVirtualNetworkSubnetConfig -Name $subnet.Name -VirtualNetwork $vnet -AddressPrefix $Using:AddPrefix
+            
+        Set-AzureRmVirtualNetwork -VirtualNetwork $vnet
+            
             } #InlineScript Closes here.
             
 Foreach -parallel ($i in 1..$NoofVMs)
@@ -152,34 +161,32 @@ $GetSNet = Get-AzureRmVirtualNetworkSubnetConfig -Name $Using:SubnetName -Virtua
 
 "Creating Network Interface Card for $VMName"
 
-        New-AzureRmNetworkInterface -Name "$VMName-NIC" -ResourceGroupName $VMName -Location $Using:VMLocation `
+        $nic = New-AzureRmNetworkInterface -Name "$VMName-NIC" -ResourceGroupName $VMName -Location $Using:VMLocation `
         -SubnetId $GetSNet.Id -PublicIpAddressId $pip.Id -NetworkSecurityGroupId $GetNSG.Id -Force
 
-Start-Sleep -Seconds "5"
-
-        $nic = Get-AzureRmNetworkInterface -Name "$VMName-NIC" -ResourceGroupName $VMName
-
-        $snapshot = Get-AzureRmSnapshot -ResourceGroupName $Using:SharedResourcesRGName -SnapshotName $Using:SnapShotName
-
+        $image = Get-AzureRMImage -ImageName $Using:SourceImageName -ResourceGroupName $Using:SharedResourcesRGName
+     
 "Successfully Created Network Config for $VMName"     
 
 "Add and Set New VMSize, OS Profile and Credentials to $VMName"
 
-        $diskConfig = New-AzureRmDiskConfig -AccountType $storageType -Location $Using:VMLocation `
-                      -SourceResourceId $snapshot.Id -CreateOption Copy
- 
-        New-AzureRmDisk -Disk $diskConfig -ResourceGroupName $VMName -DiskName "$VMName-OSDISK"
-        
-        $disk = Get-AzureRmDisk -DiskName "$VMName-OSDISK" -ResourceGroupName $VMName
+        $cred = New-Object PSCredential $Using:AdminUserName, ($Using:AdminPassword | ConvertTo-SecureString -AsPlainText -Force)
 
-        $vm = New-AzureRmVMConfig -VMName $VMName -VMSize $Using:VMSize
+        $ComputerName = $VMName
         
+        $vm = New-AzureRmVMConfig -VMName $VMName -VMSize $Using:VMSize
+
+        $vm = Set-AzureRmVMSourceImage -VM $vm -Id $image.Id
+
 If ($Using:OSProfile -eq 'Linux')
     {
 "Configuring $VMName for Linux Environment"
        
-        $vm = Set-AzureRmVMOSDisk -VM $vm -ManagedDiskId $disk.Id -CreateOption Attach -Linux
-    
+        $vm = Set-AzureRmVMOSDisk -VM $vm -StorageAccountType StandardLRS -CreateOption FromImage -Linux `
+        -Caching ReadWrite -Name $VMName
+
+        $vm = Set-AzureRmVMOperatingSystem -VM $vm -Linux -ComputerName $ComputerName -Credential $cred
+
 "Successfully Configured $VMName for Linux Environment"
     }
 
@@ -187,7 +194,10 @@ ElseIf ($Using:OSProfile -eq 'Windows')
     {
 "Configuring $VMName for Windows Environment"
        
-        $vm = Set-AzureRmVMOSDisk -VM $vm -ManagedDiskId $disk.Id -CreateOption Attach -Windows
+        $vm = Set-AzureRmVMOSDisk -VM $vm -StorageAccountType StandardLRS -CreateOption FromImage -Windows `
+        -Caching ReadWrite -Name $VMName
+
+        $vm = Set-AzureRmVMOperatingSystem -VM $vm -Windows -ComputerName $ComputerName -Credential $cred
 
 "Successfully Configured $VMName for Windows Environment"
     }
@@ -246,7 +256,7 @@ $SMTPPort = "587"
 $Username = "gulab.pasha@g7cr.in"
 $Password = "1659@aclboya4g" 
 $to = "sonali.wetal@g7cr.in"
-$cc = 'gulab.pasha@g7cr.in'
+$cc = 'harikiran.bs@g7cr.in'
 
 $subject = "Job Failed to Create NewVM - $VMName"
 
@@ -258,9 +268,11 @@ $ErrorMessage `n `n
 VMName = $VMName`n 
 VMLocation = $VMLocation `n 
 VMZSize = $VMSize `n 
+AdminUserName = $AdminUserName `n 
+AdminPassword = $AdminPassword `n 
 OSProfile = $OSProfile `n 
 SourceImg_Network_RGName = $SharedResourcesRGName `n 
-SnapShotName = $SnapShotName `n 
+SourceImageName = $SourceImageName `n 
 VNetName = $VNetName `n 
 SubNetName = $SubNetName `n 
 PublicIPName = $VMName-PIP `n 

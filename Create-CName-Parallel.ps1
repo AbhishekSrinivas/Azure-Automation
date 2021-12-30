@@ -66,7 +66,7 @@ $Name= $Using:CName + $i.ToString("00")
 $CCName = "$Name" + $Using:CNameURL
 
 
-"Creating DNS CName Records - $CCNAME"
+"Creating DNS CName Records - $CCNAME "
 
     $CN = New-AzureRmDnsRecordSet -Name $Name -RecordType CNAME -ZoneName $Using:ZoneName `
     -ResourceGroupName $Using:DNSRGName -Ttl 3600 -DnsRecords (New-AzureRmDnsRecordConfig `

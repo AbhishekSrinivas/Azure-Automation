@@ -1,4 +1,4 @@
-workflow Parallel-CreatingVM-SnapShot
+workflow Parallel-Creating-Noof-VMs-using-Snapshot
 {
 
 Param 
@@ -14,21 +14,13 @@ Param
 
         [Parameter(Mandatory=$true)]
         [String] $OSProfile,
+        
 
         [Parameter(Mandatory=$true)]
         [String] $SharedResourcesRGName,
 
         [Parameter(Mandatory=$true)]
         [String] $SnapShotName,
-
-        [Parameter(Mandatory=$true)]
-        [String] $NSGName,
-
-        [Parameter(Mandatory=$true)]
-        [String] $VNetName,
-
-        [Parameter(Mandatory=$true)]
-        [String] $SubnetName,
 
         [Parameter(Mandatory=$true)]
         [String] $VNet_AddPrefix,
@@ -75,54 +67,13 @@ Catch
 
             }
     }   
-"#******************************* Successfully Logged in to Azure Run As Connection ********************************#"
-Try
-    {
-        InlineScript 
+"#******************************* Successfully Logged in to Azure Run As Connection ********************************#"       
+
+Foreach -parallel ($i in 1..$NoofVMs)   
+{
+    InlineScript 
             {
-                
-$ErrorActionPreference = "Stop"    
-
-"Creating Shared Network Resources for all NewVMs"
-
-"Creating New Shared Network Security Group with NSG Rules"
-
-$InRule1 = New-AzureRmNetworkSecurityRuleConfig -Name "SSH" -Description "Allow SSH" `
-    -Access Allow -Protocol Tcp -Direction Inbound -Priority 100 `
-    -SourceAddressPrefix Internet -SourcePortRange * `
-    -DestinationAddressPrefix * -DestinationPortRange 22
-
-$InRule2 = New-AzureRmNetworkSecurityRuleConfig -Name "WinRDP" -Description "Allow Windows RDP" `
-    -Access Allow -Protocol * -Direction Inbound -Priority 101 `
-    -SourceAddressPrefix Internet -SourcePortRange * `
-    -DestinationAddressPrefix * -DestinationPortRange 3389
-
-$InRule3 = New-AzureRmNetworkSecurityRuleConfig -Name "HTTP" -Description "Allow Ping HTTP" `
-    -Access Allow -Protocol Tcp -Direction Inbound -Priority 102 `
-    -SourceAddressPrefix Internet -SourcePortRange * `
-    -DestinationAddressPrefix * -DestinationPortRange 80
-
-$InRule4 = New-AzureRmNetworkSecurityRuleConfig -Name "HTTPS" -Description "Allow HTTPS" `
-    -Access Allow -Protocol Tcp -Direction Inbound -Priority 103 `
-    -SourceAddressPrefix Internet -SourcePortRange * `
-    -DestinationAddressPrefix * -DestinationPortRange 443
-
-$nsg = New-AzureRmNetworkSecurityGroup -ResourceGroupName $Using:SharedResourcesRGName -Location $Using:VMLocation `
-       -Name $Using:NSGName -SecurityRules $InRule1,$InRule2,$InRule3,$InRule4
-
-"Creating New Shared Virtual Network and Subnet Config"
-
-        $subnet = New-AzureRmVirtualNetworkSubnetConfig -Name $Using:SubnetName -AddressPrefix $Using:Subnet_AddPrefix
-
-        $vnet = New-AzureRmVirtualNetwork -Name $Using:VNetName -ResourceGroupName $Using:SharedResourcesRGName `
-        -Location $Using:VMLocation -AddressPrefix $Using:VNet_AddPrefix -Subnet $subnet
-           
-            } #InlineScript Closes here.
-            
-Foreach -parallel ($i in 1..$NoofVMs)
-    
-    {
-        InlineScript 
+                Try
                     {
 
 $ErrorActionPreference = "Stop"
@@ -139,11 +90,31 @@ $DNSName = $VMName.ToLower()
 
 "Creating Network Config for $VMName"
 
-#"Get Network Security Group & Virtual Network Information"
+"Creating Shared Network Resources for all NewVMs"
 
-$GetNSG = Get-AzureRmNetworkSecurityGroup -Name $Using:NSGName -ResourceGroupName $Using:SharedResourcesRGName
-$GetVNet = Get-AzureRmVirtualNetwork -Name $Using:VNetName -ResourceGroupName $Using:SharedResourcesRGName
-$GetSNet = Get-AzureRmVirtualNetworkSubnetConfig -Name $Using:SubnetName -VirtualNetwork $GetVNet
+"Creating New Shared Network Security Group with NSG Rules"
+
+$InRule1 = New-AzureRmNetworkSecurityRuleConfig -Name "WinRDP" -Description "Allow Windows RDP" `
+    -Access Allow -Protocol * -Direction Inbound -Priority 101 `
+    -SourceAddressPrefix Internet -SourcePortRange * `
+    -DestinationAddressPrefix * -DestinationPortRange 3389
+
+$InRule2 = New-AzureRmNetworkSecurityRuleConfig -Name "SSH" -Description "Allow SSH to Linux VM" `
+    -Access Allow -Protocol * -Direction Inbound -Priority 102 `
+    -SourceAddressPrefix Internet -SourcePortRange * `
+    -DestinationAddressPrefix * -DestinationPortRange 22
+
+        $nsg = New-AzureRmNetworkSecurityGroup -ResourceGroupName $VMName -Location $Using:VMLocation `
+       -Name "$VMName-NSG" -SecurityRules $InRule1,$InRule2
+
+"Creating New Shared Virtual Network and Subnet Config"
+
+        $subnet = New-AzureRmVirtualNetworkSubnetConfig -Name "$VMName-Subnet" -AddressPrefix $Using:Subnet_AddPrefix
+
+        $vnet = New-AzureRmVirtualNetwork -Name "$VMName-VNet" -ResourceGroupName $VMName `
+        -Location $Using:VMLocation -AddressPrefix $Using:VNet_AddPrefix -Subnet $subnet
+
+#"Get Network Security Group & Virtual Network Information"
 
 "Creating Public IP with DNS Name for $VMName"
 
@@ -153,7 +124,7 @@ $GetSNet = Get-AzureRmVirtualNetworkSubnetConfig -Name $Using:SubnetName -Virtua
 "Creating Network Interface Card for $VMName"
 
         New-AzureRmNetworkInterface -Name "$VMName-NIC" -ResourceGroupName $VMName -Location $Using:VMLocation `
-        -SubnetId $GetSNet.Id -PublicIpAddressId $pip.Id -NetworkSecurityGroupId $GetNSG.Id -Force
+        -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id -NetworkSecurityGroupId $nsg.Id -Force
 
 Start-Sleep -Seconds "5"
 
@@ -165,7 +136,7 @@ Start-Sleep -Seconds "5"
 
 "Add and Set New VMSize, OS Profile and Credentials to $VMName"
 
-        $diskConfig = New-AzureRmDiskConfig -AccountType $storageType -Location $Using:VMLocation `
+        $diskConfig = New-AzureRmDiskConfig -AccountType StandardLRS -Location $Using:VMLocation `
                       -SourceResourceId $snapshot.Id -CreateOption Copy
  
         New-AzureRmDisk -Disk $diskConfig -ResourceGroupName $VMName -DiskName "$VMName-OSDISK"
@@ -225,26 +196,23 @@ Else
 
 "Successfully Added Data Disk to NewVM - $VMName"
     }
-                    }#InlineScript Closes here.
      
-    } #Foreach Parallel Closes here.
     } #Try Block Closes here. 
 
 Catch 
         {
+
             write-output "Exception Caught..."
             $ErrorMessage = $_.Exception.Message
-            Write-Output "Error Occurred: Message: $ErrorMessage" 
-
-InlineScript 
-            {
+            Write-Output "Error Occurred: Message: $ErrorMessage"
+            Remove-AzureRmResourceGroup -Name $VMName -Force
 
 "Sending EMail for Support Ticket to Create VM"
 
 $SMTPServer = "smtp.office365.com"
 $SMTPPort = "587"
 $Username = "gulab.pasha@g7cr.in"
-$Password = "1659@aclboya4g" 
+$Password = "xxxxxx" 
 $to = "sonali.wetal@g7cr.in"
 $cc = 'gulab.pasha@g7cr.in'
 
@@ -256,17 +224,14 @@ $ErrorMessage `n `n
 **************************************************************************************************** `n `n 
 
 VMName = $VMName`n 
-VMLocation = $VMLocation `n 
-VMZSize = $VMSize `n 
-OSProfile = $OSProfile `n 
-SourceImg_Network_RGName = $SharedResourcesRGName `n 
-SnapShotName = $SnapShotName `n 
-VNetName = $VNetName `n 
-SubNetName = $SubNetName `n 
-PublicIPName = $VMName-PIP `n 
-NSGName = $VMName-NSG `n 
-VNet_SNetAddPrefix = $AddPrefix `n
-DataDSKSize = $DataDSKSize `n
+VMLocation = $Using:VMLocation `n 
+VMZSize = $Using:VMSize `n 
+OSProfile = $Using:OSProfile `n 
+SourceImg_Network_RGName = $Using:SharedResourcesRGName `n 
+SnapShotName = $Using:SnapShotName `n 
+VNet_AddPrefix = $Using:VNet_AddPrefix `n 
+Subnet_AddPrefix = $Using:Subnet_AddPrefix `n 
+DataDSKSize = $Using:DataDSKSize `n
 
 ****************************************************************************************************"
 
@@ -283,8 +248,9 @@ $smtp.EnableSSL = $true
 $smtp.Credentials = New-Object System.Net.NetworkCredential($Username, $Password);
 $smtp.send($message)
 write-output "Mail Sent" 
-"***** End of Program in Fatal Error" 
-            } #Catch Block InLineScript Closes here.
-        } #Catch Block Closes here.
+"***** End of Program in Fatal Error"
 
+            } #Catch Block Closes here.          
+        } #Catch Block InLineScript Closes here. 
+    } #Foreach Parallel Closes here.
 } #WorkFlow Closes here.

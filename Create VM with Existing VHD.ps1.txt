@@ -1,0 +1,119 @@
+﻿#Select-AzureRmProfile -Path C:\Users\gulab\Desktop\gulabg7cr.json
+Login-AzureRmAccount
+
+AzureRM.Compute\Select-AzureRmSubscription -SubscriptionName "CloudCustomerDemos_MAS"
+
+###########################################################################################################################################################################
+
+## Global Variables
+
+#Specify the exiting Resource Group where your VM will get Created
+
+$ResourceGroupName = "LinuxTest"
+
+$location = "Centralindia"
+
+#Specify a Storage Account where your VHD is stored
+
+$storageName = "linuxteststrg"
+
+
+# Create new Networ stuff for new VM.
+## Network
+$nicname = "lnx-nic"
+$subnetName = "lnx-subnet"
+$vnetName = "lnx-vnet"
+$vnetAddressPrefix = "10.0.0.0/24"
+$vnetSubnetAddressPrefix = "10.0.0.0/24"
+$publicIPName = "lnx-pip"
+$NSG = "lnx-nsg"
+$DNSName = "lnxtrnrvm01"
+$NSGRule1 = "SSH"
+$NSGRule2 = "WebRDP"
+
+## Azure VM Variable Names
+$vmName = "linuxtest"
+#$computerName = "linxtest"
+$vmSize = "Standard_DS2_V2"
+$osDiskName = $vmName + "osDisk"
+
+###########################################################################################################################################################################
+
+#Set existing Storage account for your new VM
+
+$storageAcc = Set-AzureRmStorageAccount -ResourceGroupName $ResourceGroupName -Name $storageName -SkuName "Standard_LRS" 
+
+###########################################################################################################################################################################
+
+# Create New Network Security Group with required Inbound Rules -  Subnet and VNet for your VM and Setup Network Security Group
+
+$NSGRule1 = New-AzureRmNetworkSecurityRuleConfig -Name $NSGRule1 -Description "Allow SSH" -Access Allow -Protocol Tcp -Direction Inbound -Priority 100 `
+    -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 22
+
+$NSGRule2 = New-AzureRmNetworkSecurityRuleConfig -Name $NSGRule2 -Description "Allow WebRDP" -Access Allow -Protocol Tcp -Direction Inbound -Priority 100 `
+    -SourceAddressPrefix Internet -SourcePortRange * -DestinationAddressPrefix * -DestinationPortRange 40001
+
+$NSG = New-AzureRmNetworkSecurityGroup -Name $NSG -ResourceGroupName $ResourceGroupName -Location $location -SecurityRules $NSGRule1,$NSGRule2
+
+$NSG = Set-AzureRmNetworkSecurityGroup -NetworkSecurityGroup $NSG
+
+
+$singleSubnet = New-AzureRmVirtualNetworkSubnetConfig -Name $subnetName -AddressPrefix $vnetSubnetAddressPrefix -NetworkSecurityGroupId $NSG.Id
+
+$vnet = New-AzureRmVirtualNetwork -Name $vnetName -ResourceGroupName $ResourceGroupName -Location $location -AddressPrefix $vnetAddressPrefix -Subnet $singleSubnet
+
+###########################################################################################################################################################################
+
+# Set Existing Network Security Group, Subnet and VNet for your VM
+
+
+#$nsg =Get-AzureRmNetworkSecurityGroup -ResourceGroupName 'TrainerwsRG' -Name 'TrainerwsNSG' 
+
+#Create a virtual network
+#$vnet = get-AzureRmVirtualNetwork -Name 'trainerwsvnet' -ResourceGroupName 'TrainerwsRG' 
+
+#$vnet= Set-AzureRmVirtualNetworkSubnetConfig -VirtualNetwork $vnet  -Name 'trainerwssubnet' -AddressPrefix $vnetSubnetAddressPrefix  -NetworkSecurityGroup $NSG
+
+#Save the new VNet settings to Azure.srcsubnet
+
+#Set-AzureRmVirtualNetwork -VirtualNetwork $vnet
+
+
+###########################################################################################################################################################################
+
+#Create Public IP and Network Card to Access your VM
+
+#To Create Public IP
+$pip = New-AzureRmPublicIpAddress -Name $publicIPName -ResourceGroupName $ResourceGroupName -Location $location -AllocationMethod Static -DomainNameLabel $DNSName
+
+#To Create NIC Card 
+$nic = New-AzureRmNetworkInterface -Name $nicname -ResourceGroupName $ResourceGroupName -Location $location -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id
+
+###########################################################################################################################################################################
+ 
+
+## Set Hardware/Software and Network config to your VM
+
+$vm = New-AzureRmVMConfig -VMName $vmName -VMSize $vmSize
+
+$vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+
+###########################################################################################################################################################################
+
+#Specify OSDISK (VHD) to creat your VM
+
+$osDiskUri = "https://linuxteststrg.blob.core.windows.net/vhd/Ubuntu1404WebRDPVM20170124151811.vhd"
+
+###########################################################################################################################################################################
+
+#Setup your VM with above config / profile
+
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $osDiskName -VhdUri $osDiskUri -CreateOption attach -Linux -Caching ReadWrite
+
+$vm
+###########################################################################################################################################################################
+
+## Create the VM in Azure
+New-AzureRmVM -ResourceGroupName $ResourceGroupName -Location $location -VM $vm
+
+###########################################################################################################################################################################

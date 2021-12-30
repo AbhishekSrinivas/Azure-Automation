@@ -1,0 +1,187 @@
+Param
+(
+  [Parameter(Mandatory=$true)]
+  [String] $M4LVMRG
+)
+
+"#******************************* Login to Azure Run As Connection ********************************************#"
+
+  $connectionName = "AzureRunAsConnection"
+    
+Try
+    {
+    
+# Get the connection "AzureRunAsConnection "
+        
+            $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName         
+
+"Logging in to Azure..."
+
+            Add-AzureRmAccount -ServicePrincipal -TenantId $servicePrincipalConnection.TenantId `
+            -ApplicationId $servicePrincipalConnection.ApplicationId `
+            -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+    }
+
+Catch 
+    {
+        if (!$servicePrincipalConnection)
+            {
+                $ErrorMessage = "Connection $connectionName not found."
+                throw $ErrorMessage
+            } 
+        else
+            {
+                Write-Error -Message $_.Exception
+                throw $_.Exception
+            }
+    }
+"#******************************* Successfully Logged in to Azure Run As Connection ********************************#"
+
+Try 
+        {
+
+#************************************
+#Global Varialbes  
+$Resourcegroup = "M4LAutomation"
+$AutoAcc = "M4LAutomationAC"
+$VMName = $M4LVMRG
+#************************************
+
+"Get The ResourceGroup Name to Remove"
+
+$RG = Get-AzureRmResourceGroup
+
+If ($RG.ResourceGroupName -eq $M4LVMRG)
+
+    {
+    "Removing ResourceGroup - $M4LVMRG"
+
+        Remove-AzureRmResourceGroup -Name $M4LVMRG -Force
+    
+    "Successfully Removed ResouceGroup - $M4LVMRG"
+
+    "#Log to SQL on Successfull removing RG"
+      
+      $Conn = New-Object System.Data.SqlClient.SqlConnection("Server=tcp:mphm4ldbprod.southindia.cloudapp.azure.com;Database=MPHM4LDBPROD;User ID=m4lSPExecuterAzureJobs;Password=M4L!PE*eCuTe!9812;Trusted_Connection=False;Encrypt=True;Connection Timeout=30;TrustServerCertificate=True;")
+
+      $Conn.Open() 
+      $Cmd=new-object system.Data.SqlClient.SqlCommand("exec [Operations].[Proc_M4LOnRGDeleteHookUpdate] '$M4LVMRG'", $Conn) 
+      $cmd.ExecuteNonQuery(); 
+      $Conn.Close();
+      "Log To SQL Sucesfull_________________________________________________________________"
+      
+    }
+Else 
+
+    {
+        "No ResourceGroup Found to Remove"
+    }
+
+"House Keeping Remove the Schedule from the M4LMachineCreator and M4LMachineDestructor runbooks"
+
+$cvmget = Get-AzureRmAutomationSchedule -ResourceGroupName $Resourcegroup -AutomationAccountName $AutoAcc
+
+If ($cvmget.Name -eq $VMName+"CVM") 
+    {
+        "Removing Create VM Schedules"
+
+            Remove-AzureRmAutomationSchedule -Name ($VMName+"CVM") `
+            -ResourceGroupName $Resourcegroup -AutomationAccountName $AutoAcc -Force  
+          
+        "Successfully Completed Removing Schedule for CreateVM"
+
+         "#Log to SQL on Successfull removing RG"
+      $Conn = New-Object System.Data.SqlClient.SqlConnection("Server=tcp:mphm4ldbprod.southindia.cloudapp.azure.com;Database=MPHM4LDBPROD;User ID=m4lSPExecuterAzureJobs;Password=M4L!PE*eCuTe!9812;Trusted_Connection=False;Encrypt=True;Connection Timeout=30;TrustServerCertificate=True;")
+
+      $Conn.Open() 
+      $Cmd=new-object system.Data.SqlClient.SqlCommand("exec [Operations].[Proc_M4LOnRGDeleteHookUpdate] '$VMName'", $Conn) 
+      $cmd.ExecuteNonQuery(); 
+      $Conn.Close();
+      "Log To SQL Sucesfull_________________________________________________________________"
+    }
+Else 
+    {
+
+        "No CreateVM Schedule Found"
+
+    }
+
+$dvmget = Get-AzureRmAutomationSchedule -ResourceGroupName $Resourcegroup -AutomationAccountName $AutoAcc
+
+If ($dvmget.Name -eq $M4LVMRG+"DVM") 
+    {
+        "Removing Detroy ResourceGroup Schedule"
+        
+            Remove-AzureRmAutomationSchedule -Name ($VMName+"DVM") `
+            -ResourceGroupName $Resourcegroup -AutomationAccountName $AutoAcc -Force
+
+        "Successfully Completed Removing Schedule for Destroy ResourceGroup"
+
+         "#Log to SQL on Successfull removing RG"
+      $Conn = New-Object System.Data.SqlClient.SqlConnection("Server=tcp:mphm4ldbprod.southindia.cloudapp.azure.com;Database=MPHM4LDBPROD;User ID=m4lSPExecuterAzureJobs;Password=M4L!PE*eCuTe!9812;Trusted_Connection=False;Encrypt=True;Connection Timeout=30;TrustServerCertificate=True;")
+      
+      $Conn.Open() 
+      $Cmd=new-object system.Data.SqlClient.SqlCommand("exec [Operations].[Proc_M4LOnRGDeleteHookUpdate] '$VMName'", $Conn) 
+      $cmd.ExecuteNonQuery(); 
+      $Conn.Close();
+      "Log To SQL Sucesfull_________________________________________________________________"
+    }
+Else 
+    {
+
+        "No Destroy ResourceGroup Schedule Found"
+
+    }
+
+"******************************* Program Exited WITH SUCCESS ***********************************************"
+        }
+
+Catch 
+        {
+
+"In Catch Block"
+
+$ErrorMessage = $_.Exception.Message   
+$StackTrace = $_.Exception.StackTrace  
+$FailedItem = $_.Exception.ItemName                  
+		                        
+"House Keepig..."
+                $RG = Get-AzureRmResourceGroup
+                $RG.ResourceGroupName
+          
+"Sending EMail"
+
+"#******************************************************************************************************************"
+
+Write-Output $M4LVMRG
+
+"#******************************************************************************************************************"
+
+$SMTPServer = "smtp.office365.com"
+$SMTPPort = "587"
+$Username = "m4lsupport@mphasism4l.cloud"
+$Password = "Sp1derM@nP0werg7" 
+$to = "m4l_admin@g7cr.in"
+$cc = 'chris@g7cr.in'
+
+$subject = "Schedule Failed to Create (CVM & DVM)"
+$body = ("Error Message: $ErrorMessage `n",
+         "$FailedItem `n",
+         "[VMRGName = $M4LVMRG] `n")
+        
+$message = New-Object System.Net.Mail.MailMessage
+$message.subject = $subject
+$message.body = $body
+$message.to.add($to)
+$message.cc.add($cc)
+
+$message.from = $username
+<#$message.attachments.add($attachment)#>
+
+$smtp = New-Object System.Net.Mail.SmtpClient($SMTPServer, $SMTPPort);
+$smtp.EnableSSL = $true
+$smtp.Credentials = New-Object System.Net.NetworkCredential($Username, $Password);
+$smtp.send($message)
+write-output "Mail Sent" 
+"#******************************************************************************************************************"
+}
