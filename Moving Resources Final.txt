@@ -1,0 +1,10 @@
+Login-AzureRmAccount
+
+Get-AzureRmSubscription 
+
+$gulabs=Select-AzureRmSubscription -SubscriptionId "12b53db0-8384-4dd7-8ea7-4fabaacb0b0e"
+
+
+
+Get-AzureRMResource -ResourceName ubuntuvm -ResourceGroupName Demo_Move
+Move-AzureRMResource -DestinationResourceGroupName Resource_Move -DestinationSubscriptionId "3b1a7b6a-8078-43ed-b285-220a16bb8e36"

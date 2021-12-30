@@ -1,0 +1,26 @@
+{
+    "Name":  "Abhishek",
+    "IsCustom":  true,
+    "Description":  "Lets you manage virtual machines, but not the virtual network or storage account they’re connected to.",
+    "Actions":  [
+                    	"Microsoft.Compute/virtualMachines/read",
+			"Microsoft.Compute/locations/*",
+			"Microsoft.Compute/virtualMachines/start/action",
+			"Microsoft.Compute/virtualMachines/restart/action",
+			"Microsoft.Compute/virtualMachines/poweroff/action",
+			"Microsoft.Compute/virtualMachines/deallocate/action",
+			"Microsoft.Authorization/*/read",
+			"Microsoft.Network/networkInterfaces/read",
+
+                        "Microsoft.Network/networkInterfaces/*",
+                        "Microsoft.Network/*",
+
+			"Microsoft.Network/*/read",
+			"Microsoft.Resources/subscriptions/resourceGroups/read",
+
+                ],
+    "NotActions":  [
+
+                   ],
+    "AssignableScopes":  ["/subscriptions/ed76a296-bda4-4331-8816-debde1e9aa9f"]
+}

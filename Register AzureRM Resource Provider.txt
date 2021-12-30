@@ -1,0 +1,26 @@
+$gulab=Login-AzureRmAccount
+
+$gulabs=Get-AzureRmSubscription -SubscriptionId "12b53db0-8384-4dd7-8ea7-4fabaacb0b0e"
+
+
+
+#Example Run the following to register any of the AzureRM Resource Priver
+Register-AzureRmResourceProvider -ProviderNamespace Microsoft.ClassicInfrastructureMigrate
+
+
+#Wait Until it get register,, Make sure that Registration State is REGISTER before you proceed 
+
+Get-AzureRmResourceProvider -ProviderNamespace Microsoft.ClassicInfrastructureMigrate
+
+
+#The following example shows how to get all of the available resource providers.
+Get-AzureRmResourceProvider -ListAvailable
+
+
+#The next example shows how to get the resource types for a particular resource provider.
+(Get-AzureRmResourceProvider -ProviderNamespace Microsoft.compute).ResourceTypes
+
+
+#To register a resource provider provide the namespace:
+Register-AzureRmResourceProvider -ProviderNamespace Microsoft.Compute
+

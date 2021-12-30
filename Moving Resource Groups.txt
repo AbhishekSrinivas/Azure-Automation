@@ -1,0 +1,129 @@
+Move resources to new resource group or subscription:
+-----------------------------------------------------
+
+Checklist before moving resources
+There are some important steps to perform before moving a resource. By verifying these conditions, you can avoid errors.
+
+1) The service must enable the ability to move resources. See the list below for information about which services enable moving resources.
+
+2) The destination subscription must be registered for the resource provider of the resource being moved. If not, you receive an error stating that the subscription is not registered for a resource type. You might encounter this problem when moving a resource to a new subscription, but that subscription has never been used with that resource type. To learn how to check the registration status and register resource providers.
+
+3) If you are moving App Service app, you have reviewed App Service limitations.
+
+4) If you are moving resources associated with Recovery Services, you have reviewed the Recovery Services limitations
+
+5) If you are moving resources deployed through classic model, you have reviewed Classic deployment limitations.
+
+
+Services that enable move
+
+For now, the services that enable moving to both a new resource group and subscription are:
+
+API Management
+App Service apps (web apps) - see App Service limitations
+Automation
+Batch
+CDN
+Cloud Services - see Classic deployment limitations
+Data Factory
+DNS
+DocumentDB
+HDInsight clusters
+IoT Hubs
+Key Vault
+Media Services
+Mobile Engagement
+Notification Hubs
+Operational Insights
+Redis Cache
+Scheduler
+Search
+Service Bus
+Storage
+Storage (classic) - see Classic deployment limitations
+SQL Database server - The database and server must reside in the same resource group. When you move a SQL server, all of its databases are also moved.
+Virtual Machines
+Virtual Machines (classic) - see Classic deployment limitations
+Virtual Networks
+
+
+Services that do not enable move
+The services that currently do not enable moving a resource are:
+
+Application Gateway
+Application Insights
+Express Route
+Recovery Services vault - also do not move the Compute, Network, and Storage resources associated with the Recovery Services vault, see Recovery Services limitations.
+Virtual Machines Scale Sets
+Virtual Networks (classic) - see Classic deployment limitations
+VPN Gateway
+
+
+
+Use PowerShell
+
+=========================================================================================================================================================
+To move existing resources to another resource group or subscription, use the Move-AzureRmResource command.
+
+The first example shows how to move one resource to a new resource group.
+
+$resource = Get-AzureRmResource -ResourceName ExampleApp -ResourceGroupName OldRG
+Move-AzureRmResource -DestinationResourceGroupName NewRG -ResourceId $resource.ResourceId
+
+=========================================================================================================================================================
+
+
+The second example shows how to move multiple resources to a new resource group.
+
+$webapp = Get-AzureRmResource -ResourceGroupName OldRG -ResourceName ExampleSite
+$plan = Get-AzureRmResource -ResourceGroupName OldRG -ResourceName ExamplePlan
+Move-AzureRmResource -DestinationResourceGroupName NewRG -ResourceId $webapp.ResourceId, $plan.ResourceId
+
+
+To move to a new subscription, include a value for the DestinationSubscriptionId parameter.
+
+You are asked to confirm that you want to move the specified resources.
+
+Confirm 
+Are you sure you want to move these resources to the resource group
+
+
+'/subscriptions/{guid}/resourceGroups/newRG' the resources:
+
+
+/subscriptions/{guid}/resourceGroups/destinationgroup/providers/Microsoft.Web/serverFarms/exampleplan
+/subscriptions/{guid}/resourceGroups/destinationgroup/providers/Microsoft.Web/sites/examplesite
+
+
+[Y] Yes  [N] No  [S] Suspend  [?] Help (default is "Y"): y
+
+=========================================================================================================================================================
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Example Script to move resources to another subscription:
+--------------------------------------------------------
+
+
+$varun=Login-AzureRmAccount
+
+$varuns=Get-AzureRmSubscription -SubscriptionId "3b1a7b6a-8078-43ed-b285-220a16bb8e36"
+
+
+
+#$gulab=Login-AzureRmAccount
+
+#$gulabs=Get-AzureRmSubscription -SubscriptionId "12b53db0-8384-4dd7-8ea7-4fabaacb0b0e"
+
+
+
+
+
+$webapp = Get-AzureRmResource -ResourceGroupName 'componentbuy' -ResourceName mongodbvm01 
+
+
+$plan = Get-AzureRmResource -ResourceGroupName componentbuy -ResourceName mongodbvm01
+
+Move-AzureRmResource -DestinationResourceGroupName componentbuy1 -ResourceId $webapp.ResourceId -DestinationSubscriptionId "12b53db0-8384-4dd7-8ea7-4fabaacb0b0e"
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------

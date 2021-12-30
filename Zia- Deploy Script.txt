@@ -1,0 +1,87 @@
+#Dinploy New VM using Your custom VM
+
+
+# Sign-in with Azure account credentials
+Login-AzureRmAccount
+
+# Select your Azure Subscription.
+
+
+#Select-AzureRmProfile -Path C:\cred.json
+#Get-AzureRmSubscription -SubscriptionId "3b1a7b6a-8078-43ed-b285-220a16bb8e36"
+
+$subscriptionId = 
+    (Get-AzureRmSubscription |
+     Out-GridView `
+        -Title "Select an Azure Subscription ..." `
+        -PassThru).SubscriptionId
+
+Select-AzureRmSubscription `
+    -SubscriptionId $subscriptionId
+
+## Global Variables 
+$ResourceGroupName = "dstresourcegrp"
+$location = "Southeastasia"
+
+## Storage
+$storageName = "dststorage"
+$storageType = "Standard_A1"
+
+
+## Network
+$nicname = "dstnic"
+$subnetName = "dstsubnet"
+$vnetName = "dstvnet"
+$vnetAddressPrefix = "10.0.0.0/16"
+$vnetSubnetAddressPrefix = "10.0.0.0/24"
+$publicIPName = "dstpip"
+
+## Compute
+$vmName = "dstvm"
+$computerName = "dstcomputer"
+$vmSize = "Standard_A1"
+$osDiskName = $vmName + "osDisk"
+
+#Create New Resouce Group
+New-AzureRmResourceGroup -Name $ResourceGroupName -Location $location
+
+#Create New Storage and put in variable $storageacc
+
+$storageAcc = New-AzureRmStorageAccount -ResourceGroupName $ResourceGroupName -Name $storageName -SkuName "Standard_LRS" -Kind "Storage" -Location $location
+
+
+#Create a virtual network
+$singleSubnet = New-AzureRmVirtualNetworkSubnetConfig -Name $subnetName -AddressPrefix $vnetSubnetAddressPrefix
+$vnet = New-AzureRmVirtualNetwork -Name $vnetName -ResourceGroupName $ResourceGroupName -Location $location -AddressPrefix $vnetAddressPrefix -Subnet $singleSubnet
+
+#Create a public IP address and network interface
+$pip = New-AzureRmPublicIpAddress -Name $publicIPName -ResourceGroupName $ResourceGroupName -Location $location -AllocationMethod Dynamic
+$nic = New-AzureRmNetworkInterface -Name $nicname -ResourceGroupName $ResourceGroupName -Location $location -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $pip.Id
+
+
+
+#Create a virtual machine
+
+#The password must be at 12-123 characters long and have at least one lower case character, one upper case character, one number, and one special character. 
+$cred = Get-Credential -Message "Type the name and password of the local administrator account."
+
+
+$vm = New-AzureRmVMConfig -VMName $vmName -VMSize $vmSize
+
+$vm = Set-AzureRmVMOperatingSystem -VM $vm -Windows -ComputerName $computerName -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+
+$vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+
+
+#Create New Os Disk uri
+$osDiskUri = "https://srcstorage.blob.core.windows.net/vhds/newosdisk.vhd"
+
+#Image URI you can Find Storage group --> Blob --> System -->Microsoft.Compute -->Images --> your conntainer Name --> vhd name given while caputure VM.
+$imageUri = "https://srcstorage.blob.core.windows.net/system/Microsoft.Compute/Images/customvhd/Lovlyimg-osDisk.a2d499b8-42b4-4fca-83cf-8403d759435b.vhd"
+$vm = Set-AzureRmVMOSDisk -VM $vm -Name $osDiskName -VhdUri $osDiskUri -CreateOption FromImage -SourceImageUri $imageUri  -Caching ReadWrite -Windows
+
+#running below command you can see your VM attached parameters.
+$vm
+
+#Create the new VM
+New-AzureRmVM -ResourceGroupName $ResourceGroupName -Location $location -VM $vm

@@ -1,0 +1,33 @@
+#VHD Image upload script
+
+Login-AzureRmAccount
+Get-AzureRmSubscription
+$gulabs=Select-AzureRmSubscription -SubscriptionId "12b53db0-8384-4dd7-8ea7-4fabaacb0b0e"
+
+
+#Select-AzureRmProfile -Path “C:\Users\gulab\Desktop\Text\Login.json”
+
+
+$ResourceGroupName="gulab_linuxvm-01"
+
+#If New storage group uncomment line 33 and comment line 34. if existing Storage name then just give name & continue.
+#And make sure you use only letters and numbers for storage name, container name and Destination VHD name this will not accept any specal characters like ",.-"
+$storageName = "gulabubuntu160401"
+$location= 'Southeastasia'
+$containername='ubuntu160401'
+
+#Mention your local path where your VHD exist.
+$SourceVHD = 'C:\Users\gulab\Desktop\Virtual Machines\Ubuntu-16.04\Ubuntu-16.04.vhd'
+$DestinationVHDName = 'ubuntu1604demo01.vhd'
+
+################################################################################################################
+
+New-AzureRmResourceGroup -Name $ResourceGroupName -Location $location
+Get-AzureRmStorageAccountNameAvailability $storageName
+$storageAcc = New-AzureRmStorageAccount -ResourceGroupName $ResourceGroupName -Name $storageName -SkuName "Standard_LRS" -Kind "Storage" -Location $location
+$storageAcc = Set-AzureRmStorageAccount -ResourceGroupName $ResourceGroupName -Name $storageName -SkuName "Standard_LRS"
+
+
+New-AzureStorageContainer -Name $containername -Context $storageAcc.Context -Permission off
+
+Add-AzureRmVhd -LocalFilePath $SourceVHD -ResourceGroupName $ResourceGroupName -Destination "$($storageAcc.PrimaryEndpoints.Blob)$containername/$DestinationVHDName"

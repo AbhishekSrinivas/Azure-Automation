@@ -1,0 +1,20 @@
+Select-AzureRmProfile -Path 'C:\users\gulab\Desktop\Text\Azure Scripts\gmail.json'
+
+
+#Choose your Automation account --> Crendentials Name
+#$Cred = Get-AzureRmAutomationCredential -Name 'mycredentials' -ResourceGroupName 'Automation-Demo' -AutomationAccountName 'gulabpasha'
+#Add-AzureRmAccount -Credential $Cred 
+
+#Choose your Azure Subscription Tenant ID and Subscrition Name
+Select-AzureRmSubscription -TenantId "493b9b55-2210-462f-ac55-0813e61f7e86" -SubscriptionName 'Free Trial'
+
+
+#Get All AzureRM VMs Names which you would like to stop
+$VMs = Get-AzureRmVM | Where-Object -FilterScript {$_.Statuses -ne 'StoppedDeallocated'}
+
+foreach ($VM in $VMs)
+        
+        { 
+            $VMInfo = "VM Name :" + $VM.Name + "," + "VM ServiceName :" + $VM.ServiceName
+            Write-Output $VMInfo
+        }

@@ -1,0 +1,15 @@
+﻿Select-AzureRmProfile -Profile C:\Users\gulab\Desktop\m4l.json
+#Login-AzureRmAccount
+Select-AzureRmSubscription -SubscriptionName "G7CRM4L08"
+
+$RGName = "M4LTemplates"
+$Location = "SouthIndia"
+$imageName = "m4l01s2_img2"
+$osVhdUri = $SA.PrimaryEndpoints.Blob.ToString() + "templates/m4l01s2.vhd"
+
+$imageConfig = New-AzureRmImageConfig -Location $Location
+$imageConfig = Set-AzureRmImageOsDisk -Image $imageConfig -OsType Linux -OsState Generalized -BlobUri $osVhdUri
+
+$image = New-AzureRmImage -ImageName $imageName -ResourceGroupName $RGName -Image $imageConfig
+
+

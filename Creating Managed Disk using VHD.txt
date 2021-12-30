@@ -1,0 +1,12 @@
+Login-AzureRmAccount
+
+$RGName = "Your Source RGName"
+$Location = "SouthIndia"
+$imageName = "New_image_Name"
+$osVhdUri = "https://g7tstm4ltemplatesa002.blob.core.windows.net/templates/m4l01s4-testingimage.vhd"
+
+$imageConfig = New-AzureRmImageConfig -Location $Location
+
+$imageConfig = Set-AzureRmImageOsDisk -Image $imageConfig -OsType Linux -OsState Generalized -BlobUri $osVhdUri
+
+$image = New-AzureRmImage -ImageName $imageName -ResourceGroupName $RGName -Image $imageConfig

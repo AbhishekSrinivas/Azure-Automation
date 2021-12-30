@@ -1,0 +1,31 @@
+﻿#Login-AzureRmAccount
+
+Select-AzureRmSubscription -Subscription "MphasisTadam"
+
+$VMS = Get-AzureRmVM
+
+$results = @()
+
+$Resources
+
+
+$file = "C:\Users\gulab\Desktop\Tadam.csv"
+
+Foreach ($VM in $VMS)
+
+{
+
+$details  = @{ 
+
+'ResourceGroupName' = $VM.ResourceGroupName
+'VMName' = $VM.Name
+'VMSize' = $VM.HardwareProfile.VmSize
+'VM_OSType' = $VM.StorageProfile.OsDisk.OsType
+'VM_OSDisk_Size' = $VM.StorageProfile.OsDisk.DiskSizeGB
+ }
+
+$results += New-Object PSObject -Property $details
+
+}
+
+$results | Select "ResourceGroupName","VMName","VMSize","VM_OSType","VM_OSDisk_Size" | Export-Csv -Path $file
