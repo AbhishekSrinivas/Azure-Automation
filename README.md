@@ -40,8 +40,9 @@ Use `Get-Credential`, Azure Key Vault, or Automation account variables and crede
 | `microsoft-365` | Aliases, Teams, mailbox and group tasks |
 | `monitoring-and-reporting` | VM, NSG, disk and activity exports |
 | `resource-management` | Resource groups, providers, modules and authentication |
-| `docs` | Short how-to documents |
 | `archive` | Older versions and bundled sets, kept for reference |
+
+Guides (`.docx` and `.txt` how-tos) sit next to the scripts they describe.
 
 Files follow `Verb-Noun-Detail` naming in kebab-case. Variants of the same script carry a `-v2` suffix.
 
