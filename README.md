@@ -1,8 +1,8 @@
 # Azure Automation
 
-PowerShell scripts I wrote and collected while managing Azure: creating and scheduling VMs, moving disks around, networking, SQL backups, access reports. Most were written for the old AzureRM module, so expect to adapt them for `Az`.
+PowerShell scripts I wrote and collected while managing Azure. They cover creating and scheduling VMs, moving disks, networking, SQL backups and access reports. Most use the old AzureRM module, so adapt them for `Az` before you run them.
 
-All identifying values (passwords, keys, tokens, subscription and tenant IDs, hostnames, email addresses) have been replaced with placeholders such as `<PASSWORD>`, `<SUBSCRIPTION_ID>` and `user@contoso.com`. Fill them in or, better, pull them from Key Vault or Automation variables.
+I replaced every identifying value (passwords, keys, tokens, subscription and tenant IDs, hostnames and email addresses) with a placeholder such as `<PASSWORD>`, `<SUBSCRIPTION_ID>` or `user@contoso.com`. Fill them in, or better, read them from Key Vault or Automation variables.
 
 ## Folders
 
