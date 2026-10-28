@@ -9,4 +9,4 @@ AM
 Perf | where CounterName == "Available MBytes" | summarize Avg_MemoryAvailable = avg(CounterValue), Min_MemoryAvailable = min(CounterValue), Max_MemoryAvailable = max(CounterValue) by Computer, bin(TimeGenerated, 10min)
 | where Computer == "DATAHUB01-VM"
 
-P@ssw0rd@123
+<PASSWORD>
