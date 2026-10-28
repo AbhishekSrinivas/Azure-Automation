@@ -1,0 +1,9 @@
+Login-AzureRmAccount
+Add-AzureRmAccount
+Select-AzureRmSubscription -SubscriptionId "your Subscription ID"
+
+
+$source = 'https://[STORAGEACCOUNTNAME].blob.core.windows.net/vhds/[VHDNAME].vhd'
+$destination = 'f:\[VHDNAME].vhd'
+
+Save-AzureRmVhd -Source $source -LocalFilePath $destination

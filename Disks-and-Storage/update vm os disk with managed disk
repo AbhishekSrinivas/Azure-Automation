@@ -1,0 +1,10 @@
+$subscriptionID = "<SUBSCRIPTION_ID>"
+$rgname = "contosoprodsv01-Migrated"
+$vmname = "contosoprodsv01"
+$vhduri = 'https://<storage-account>.blob.core.windows.net/fixed/contosoprodsv01-contosoprodsv01-2013-12-30.vhd'
+Add-AzureRmAccount
+Select-AzureRmSubscription -SubscriptionID $subscriptionID
+Set-AzureRmContext -SubscriptionID $subscriptionID
+$vm = Get-AzVM -ResourceGroupName $rgname -Name $vmname
+$vm.StorageProfile.OsDisk.Vhd.Uri = $vhduri
+Update-AzVM -ResourceGroupName $rgname -VM $vm

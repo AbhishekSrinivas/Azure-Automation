@@ -1,0 +1,1 @@
+﻿Add-NetNatStaticMapping -ExternalIPAddress "0.0.0.0/0" -ExternalPort 80 -Protocol TCP -InternalIPAddress "192.168.2.14" -InternalPort 81 -NatName InternalNat

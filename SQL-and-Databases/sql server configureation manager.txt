@@ -1,0 +1,66 @@
+SQl server configureartion manager:
+
+you can change the configuration sql server user (windows user so you can have administrative access, permission), 
+you can start, stop and pause services from this.
+
+you can check the version of sql engine 
+
+enable the prtocols to be used while communicating
+
+u can order/priorites the protocols to be used in client machine not in sql server, because u enabled every port number in
+ sql server. just do it in client ,machine
+
+change port number of tcp/ip for security purpose if u need. 
+
+schema is nothing but namespace : its for the purpose of name conflication because u cant create same name table or 
+column or database 
+so for this reason we use schema to avoid name conflication.
+
+synomnes are pointers to stored procedure. used for using stored procedure of masterdb
+
+serial plan or paralell plan: 
+cost of threshold: amount of time to do job 
+degree of threshold: how many cores or schedulars can it use to do that job 
+
+
+
+
+isolation levels in sql server 2016:
+
+under READ COMITTED, the second SELECT may return any data. A concurrent transaction may update the record, delete it, insert new records. The second select will always see the new data.
+under REPEATABLE READ the second SELECT is guaranteed to see the rows that has seen at first select unchanged. New rows may be added by a concurrent transaction in that one minute, but the existing rows cannot be deleted nor changed.
+under SERIALIZABLE reads the second select is guaranteed to see exactly the same rows as the first. No row can change, nor deleted, nor new rows could be inserted by a concurrent transaction.
+
+
+types of system database instance:
+master
+model
+msdb
+tempdb
+resourcedb
+
+masterdb:
+it stores the configuration, meta data about all databases and as parent database which stores details about where 
+databases store and structure of databases.if masterdb is down then all databases are goes down. so make sure u 
+taken backup of masterdb.
+
+modeldb:
+its the common things to all new databases so whenever u create new database this model will be copied from system 
+database of model.
+
+msdb:
+it is used mainly by SQL server agent to store system activities like jobs, mail,service broker, maintenance plan of user
+and system database backup histroy. it is used by database engine and management studio. so if u want ur jobs to work 
+properly take a backup of this db.
+
+tempdb:
+it will stores temporary databases tables for examples while doing joins we have to store 2 tables tempararly for joining,
+it just act like temp object in programmimg langauge, it will stores tables temporarly to do the jobs.
+if u stores more database in temporary db then u service become slow(querying becomes slow). if u loos this db also no 
+problem.
+
+resource db:
+it is hidden db for security purpose. reason for this db to be hidden is because if u using SP_Help stored procedure,
+this procedure is defualt so if this db is visible for everyone then any one change the code of this default procedure 
+then whenever u run this procedure it will run that alterd procedure not microsofts originally developed/ created procedure
+so for this purpose it is hidden but u can get copy of this db not original one.  

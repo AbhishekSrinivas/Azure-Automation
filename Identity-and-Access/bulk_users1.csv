@@ -1,0 +1,3 @@
+firstname,middleInitial,lastname,username,email,streetaddress,city,zipcode,state,country,department,password,telephone,jobtitle,company,ou
+First1,X,Last1,user1,user1@contoso.com,1 Example Street,Exampleville,00000,ST,United States,Marketing,<PASSWORD>,000-000-0000,Marking Specialist,Contoso,"OU=Users,DC=contoso,DC=com"
+First2,X,Last2,user2,user2@contoso.com,1 Example Street,Exampleville,00000,ST,United States,Marketing,<PASSWORD>,000-000-0000,Marking Specialist,Contoso,"OU=Users,DC=contoso,DC=com"

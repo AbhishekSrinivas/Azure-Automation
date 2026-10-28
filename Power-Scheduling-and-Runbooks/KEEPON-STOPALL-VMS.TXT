@@ -1,0 +1,120 @@
+﻿workflow KEEPON-STOPALL-VMS
+
+{
+
+Param
+    (
+		[parameter(Mandatory = $true)]
+		[string]$ActionType,
+
+		[parameter(Mandatory = $false)]
+		[string]$NameFilter
+	)
+
+"#******************************* Login to Azure Run As Connection ********************************************#"
+$connectionName = "AzureRunAsConnection"
+    
+Try
+    {
+# Get the connection "AzureRunAsConnection"
+        
+            $servicePrincipalConnection=Get-AutomationConnection -Name $connectionName         
+
+"Logging in to Azure..."
+
+            Add-AzureRmAccount -ServicePrincipal -TenantId $servicePrincipalConnection.TenantId `
+            -ApplicationId $servicePrincipalConnection.ApplicationId `
+            -CertificateThumbprint $servicePrincipalConnection.CertificateThumbprint 
+    }
+
+Catch 
+    {
+        if (!$servicePrincipalConnection)
+            {
+                $ErrorMessage = "Connection $connectionName not found."
+                throw $ErrorMessage
+            } 
+        else
+            {
+                Write-Error -Message $_.Exception
+                throw $_.Exception
+                $ErrorMessage = $_.Exception
+
+            }
+    }   
+"#******************************* Successfully Logged in to Azure Run As Connection ********************************#"
+Try
+
+    {
+
+# Returns strings with status messages 
+[OutputType([String])]
+	
+$VerbosePreference = 'Continue'
+
+[regex]$actionTypeRegex = 'KEEPON|STOPALL'
+
+if ($NameFilter) 
+
+    {
+		$nameFilterList = $NameFilter.Split(',')
+		[regex]$nameFilterRegex = ‘(‘ + (($nameFilterList | foreach {[regex]::escape($_.ToLower())}) –join “|”) + ‘)’
+	}
+	
+if ($ActionType.ToUpper() -notmatch $actionTypeRegex) 
+    
+    {
+        throw "ActionType not valid, valid actions are KEEPON, STOP, and STOPALL"
+	}
+
+if ($ActionType.ToUpper() -eq 'KEEPON') 
+
+        {$VMS = Get-AzureRmVM | ? { $nameFilterList.Count -eq 0 -or $_.Name.ToLower() -notmatch $nameFilterRegex } }
+				
+elseif ($ActionType.ToUpper() -eq 'STOPALL') 
+
+        {$VMS = Get-AzureRmVM}
+
+if ($VMS.Count -eq 0) 
+
+        {Write-Output "No VMNames are Specified to Stop"}
+
+foreach -parallel ($VM in $VMS) 
+
+{
+
+$vmstatus = (Get-AzureRmVM -Name $VM.Name -ResourceGroupName $VM.ResourceGroupName -Status).Statuses | Where-Object {$_.Code -like "PowerState/*"}
+
+if($vmstatus.DisplayStatus -eq "VM Running")
+        {
+            $VMName = $VM.Name
+            Write-Output "Triggered to STOP VM - $VMName"
+                                
+            Stop-AzureRmVM -Name $VM.Name -ResourceGroupName $VM.ResourceGroupName -Force
+        }
+
+    Else {
+            $VMName = $VM.Name
+            Write-Output "$VMName - VM is Already Stopped"
+        }
+
+
+if ((Get-AzureRmVM -Name $($VM.Name) -ResourceGroupName $VM.ResourceGroupName -ErrorAction SilentlyContinue) -eq $null) 
+
+        {
+            $VMName = $VM.Name
+            Write-Output "...Successfully Stopping VM - $VMName"
+        }
+
+    }
+
+Write-Output "Successfully Completed Stopping"
+}
+
+Catch {$errorMessage = $_}
+		
+if ($errorMessage) {Write-Error $errorMessage}
+
+
+}
+

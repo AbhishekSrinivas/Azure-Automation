@@ -1,0 +1,10 @@
+Login-AzureRmAccount
+
+Get-AzureRmSubscription 
+
+$users=Select-AzureRmSubscription -SubscriptionId "<GUID>"
+
+
+
+Get-AzureRMResource -ResourceName ubuntuvm -ResourceGroupName Demo_Move
+Move-AzureRMResource -DestinationResourceGroupName Resource_Move -DestinationSubscriptionId "<GUID>"

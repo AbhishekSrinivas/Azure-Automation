@@ -1,0 +1,37 @@
+﻿Login-AzureRmAccount
+
+ 
+
+
+Select-AzureRmSubscription -SubscriptionName "PROD"
+
+ 
+
+$RGName = "PCINDRG01"       
+$VMName = "ciprdsqlnode06" 
+$VMLocation = "Central India"
+$VMSize = "Standard_D2s_v3"
+$DiskName = "ciprdsqlnode06_OsDisk_1_ae5dde6ad2bd46a483e385d275e97891"
+$NICName = ""
+    
+    $avset = Get-AzureRmAvailabilitySet -ResourceGroupName $RGName -Name $AVSetName
+
+ 
+
+    $nic = Get-AzureRmNetworkInterface -Name $NICName -ResourceGroupName $RGName
+
+ 
+
+    $disk = Get-AzureRmDisk -ResourceGroupName $RGName -DiskName $DiskName
+       
+    $vm = New-AzureRmVMConfig -VMName $VMName -VMSize $VMSize -AvailabilitySetId $avset.Id
+
+ 
+
+    #$vm = Set-AzureRmVMPlan -VM $vm -Name "4" -Product "wordpress-multisite" -Publisher "bitnami"
+      
+    $vm = Set-AzureRmVMOSDisk -VM $vm -Linux -CreateOption "Attach" -ManagedDiskId $disk.Id      
+   
+    $vm = Add-AzureRmVMNetworkInterface -VM $vm -Id $nic.Id
+        
+    New-AzureRmVM -VM $vm -ResourceGroupName $RGName -Location $VMLocation

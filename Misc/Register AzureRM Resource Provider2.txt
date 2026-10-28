@@ -1,0 +1,7 @@
+﻿Login-AzureRmAccount
+
+Select-AzureRmSubscription -Subscription "MobiusProject-UBM-Subscription"
+
+get-AzureRmResourceProvider -ListAvailable |where {$_.Registrationstate -eq "Registered"}
+
+Register-AzureRmResourceProvider -ProviderNamespace Microsoft.Logic

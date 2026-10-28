@@ -1,0 +1,8 @@
+Widows Virtual Desktop:
+
+
+win 10 license will not support more than one user to use desktop. it is available in only in Server.
+So WVD is nothing but Server bhind the sceen but you create WS 10 in Server.
+only availble in East US region
+
+fslogic
