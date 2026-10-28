@@ -23,17 +23,27 @@ Use `Get-Credential`, Azure Key Vault, or Automation account variables and crede
 
 | Folder | Contents |
 |---|---|
-| `VM-Creation/` | Creating single and multiple VMs from images, snapshots and VHDs |
-| `Power-Scheduling-and-Runbooks/` | Start/stop schedules, webhooks, runbook helpers, resizing |
-| `Disks-and-Storage/` | Managed disks, VHDs, snapshots, blob copy and retention |
-| `Networking-and-DNS/` | NICs, NSGs, VMSS, load balancer, DNS records |
-| `Application-Gateway/` | Gateway scaling, probes, listeners and certificates |
-| `SQL-and-Databases/` | SQL PaaS backups, exports and tier resizing |
-| `Identity-and-Access/` | Service principals, IAM roles, Microsoft 365 user tasks |
-| `Reporting-and-Inventory/` | Exports of VM, NSG, disk and activity data |
-| `Docs/` | Short how-to documents |
-| `Misc/` | Module installs, resource provider registration and utilities |
-| `Archive/` | Older versions, extracted bundles and scratch files |
+| `virtual-machines/create` | Create single or multiple VMs from images, snapshots, VHDs and Marketplace images (with ARM `templates/`) |
+| `virtual-machines/create-parallel` | Parallel VM creation using workflows |
+| `virtual-machines/power-management` | Start, stop and schedule VMs, including weekday-only variants |
+| `virtual-machines/resize-and-extensions` | VM size changes, extensions, availability sets |
+| `virtual-machines/guest-os` | In-guest scripts and notes |
+| `disks-and-storage/managed-disks` | Copy, convert, swap and inspect managed disks |
+| `disks-and-storage/snapshots` | Snapshot creation |
+| `disks-and-storage/vhd-and-images` | VHD upload and download, managed images |
+| `disks-and-storage/blob-storage` | Blob copy, upload, size and retention clean-up |
+| `networking/` | `nic-and-nsg`, `dns`, `load-balancing-and-nat`, `vmss` |
+| `application-gateway` | Gateway scaling, probes, listeners and certificates |
+| `automation-runbooks/` | `accounts-and-jobs`, `webhooks`, `notifications` |
+| `databases` | SQL PaaS backups, exports and tier resizing, MySQL insert |
+| `identity-and-access` | Service principals, IAM role actions, bulk users |
+| `microsoft-365` | Aliases, Teams, mailbox and group tasks |
+| `monitoring-and-reporting` | VM, NSG, disk and activity exports |
+| `resource-management` | Resource groups, providers, modules and authentication |
+| `docs` | Short how-to documents |
+| `archive` | Older versions and bundled sets, kept for reference |
+
+Files follow `Verb-Noun-Detail` naming in kebab-case. Variants of the same script carry a `-v2` suffix.
 
 ## Getting started
 
